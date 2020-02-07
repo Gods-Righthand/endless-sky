@@ -39,6 +39,9 @@ namespace {
 		string message = "The " + ship->Name() + " was added to your fleet!";
 
 		player.AddShip(ship);
+		//for(const Ship::Bay &bay : ship->Bays())
+            //if(bay.ship)
+                //player.AddShip(bay.ship);
 
 		if(ui)
 			ui->Push(new Dialog(message));
@@ -200,22 +203,30 @@ void MissionAction::Load(const DataNode &node, const string &missionName)
         else if(key == "ship" && hasValue)
 		{
 			std::cout << "ship hasvalue\n";
-			string shipName;
+			string shipName = child.Token(2);
 			string modelName = child.Token(1);
 			const Ship *model = GameData::Ships().Get(modelName);
 			std::cout << "modelName:" << modelName << "\n";
 
 			if (child.Token(2).empty())
 				shipName = GameData::Phrases().Get("civilian")->Get();
-			else
-				shipName = child.Token(2);
+			else if(!child.Token(2).empty())
+            {
+                shipName = child.Token(2);
+            }
+            else
+                child.PrintTrace("Uh Oh");
+            //cerr<<child.Token(2)<<endl;
 			std::cout << "shipName:" << shipName << "\n";
 			shared_ptr<Ship> ship(new Ship(*model));
 			ship->SetName(shipName);
+			//ship->GetSystem(system);
 			ship->FinishLoading(false);
 
-//			player.AddShip(ship);
 			giftShips.push_back(ship);
+			/*giftShips.back()->SetIsSpecial();
+			giftShips.back()->SetIsYours();
+			giftShips.back()->SetGovernment(GameData::PlayerGovernment());*/
 			std::cout << "giftShips.size()" << giftShips.size() << "\n";
 			std::cout << "giftShips.back()->Name()" << giftShips.back()->Name() << "\n";
 		}
@@ -236,7 +247,9 @@ void MissionAction::Load(const DataNode &node, const string &missionName)
 		{
 			int count = (child.Size() < 3 ? 1 : static_cast<int>(child.Value(2)));
 			if(count >= 0)
+            {
 				requiredOutfits[GameData::Outfits().Get(child.Token(1))] = count;
+            }
 			else
 				child.PrintTrace("Skipping invalid \"require\" amount:");
 		}
@@ -492,7 +505,8 @@ void MissionAction::Do(PlayerInfo &player, UI *ui, const System *destination, co
 			player.AddSpecialLog(it.first, eit.first, eit.second);
 
 	for(const auto &it : giftShips)
-		DoGiftShip(player, it, ui);
+        if(it > 0)
+            DoGiftShip(player, it, ui);
 	// If multiple outfits are being transferred, first remove them before
 	// adding any new ones.
 	for(const auto &it : giftOutfits)
@@ -542,6 +556,15 @@ MissionAction MissionAction::Instantiate(map<string, string> &subs, const System
 		int day = it.second.first + Random::Int(it.second.second - it.second.first + 1);
 		result.events[it.first] = make_pair(day, day);
 	}
+	for(const shared_ptr<Ship> &ship : giftShips)
+    {
+        result.giftShips.push_back(ship);//shared_ptr<Ship>(new Ship()));
+        //ship->SetSystem(result.system);
+        result.giftShips.back()->SetGovernment(GameData::PlayerGovernment());
+        //result.giftShips.back()->AddCrew(RequiredCrew());
+
+    }
+	//result.giftShips = giftShips;
 	result.giftOutfits = giftOutfits;
 	result.requiredOutfits = requiredOutfits;
 	result.payment = payment + (jumps + 1) * payload * paymentMultiplier;
