@@ -556,15 +556,15 @@ MissionAction MissionAction::Instantiate(map<string, string> &subs, const System
 		int day = it.second.first + Random::Int(it.second.second - it.second.first + 1);
 		result.events[it.first] = make_pair(day, day);
 	}
-	for(const shared_ptr<Ship> &ship : giftShips)
+	/*for(const shared_ptr<Ship> &ship : giftShips)
     {
         result.giftShips.push_back(ship);//shared_ptr<Ship>(new Ship()));
         //ship->SetSystem(result.system);
         result.giftShips.back()->SetGovernment(GameData::PlayerGovernment());
         //result.giftShips.back()->AddCrew(RequiredCrew());
 
-    }
-	//result.giftShips = giftShips;
+    }*/
+	result.giftShips = giftShips;
 	result.giftOutfits = giftOutfits;
 	result.requiredOutfits = requiredOutfits;
 	result.payment = payment + (jumps + 1) * payload * paymentMultiplier;
