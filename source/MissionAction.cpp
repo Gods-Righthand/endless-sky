@@ -39,9 +39,11 @@ namespace {
 		string message = "The " + ship->Name() + " was added to your fleet!";
 
 		player.AddShip(ship);
-		//for(const Ship::Bay &bay : ship->Bays())
-            //if(bay.ship)
-                //player.AddShip(bay.ship);
+		for(const Ship::Bay &bay : ship->Bays())
+        {
+            if(bay.ship)
+                player.AddShip(bay.ship);
+        }
 
 		if(ui)
 			ui->Push(new Dialog(message));
@@ -206,6 +208,7 @@ void MissionAction::Load(const DataNode &node, const string &missionName)
 			string shipName = child.Token(2);
 			string modelName = child.Token(1);
 			const Ship *model = GameData::Ships().Get(modelName);
+
 			std::cout << "modelName:" << modelName << "\n";
 
 			if (child.Token(2).empty())
@@ -216,14 +219,21 @@ void MissionAction::Load(const DataNode &node, const string &missionName)
             }
             else
                 child.PrintTrace("Uh Oh");
+
             //cerr<<child.Token(2)<<endl;
 			std::cout << "shipName:" << shipName << "\n";
 			shared_ptr<Ship> ship(new Ship(*model));
+            //giftShips.push_back(ship);
 			ship->SetName(shipName);
-			//ship->GetSystem(system);
+			ship->GetSystem();
+			ship->RequiredCrew();
+			ship->Disable();
 			ship->FinishLoading(false);
 
-			giftShips.push_back(ship);
+			giftShips.push_back(ship);//shared_ptr<Ship> (new Ship(*model)));
+			/*giftShips.back()->Disable();
+			giftShips.back()->RequiredCrew();
+			giftShips.back()->SetName(shipName);
 			/*giftShips.back()->SetIsSpecial();
 			giftShips.back()->SetIsYours();
 			giftShips.back()->SetGovernment(GameData::PlayerGovernment());*/
@@ -343,7 +353,7 @@ void MissionAction::Save(DataWriter &out) const
 		}
 		if(!conversation.IsEmpty())
 			conversation.Save(out);
-
+        std::cout << "giftOutfits" << giftOutfits.size() << "\n";
 		std::cout << "before writes\n";
 		std::cout << "giftShips length: " << giftShips.size() << "\n";
 		for(const auto &it : giftShips)
@@ -357,6 +367,7 @@ void MissionAction::Save(DataWriter &out) const
 			out.Write("outfit", it.first->Name(), it.second);
 			std::cout << "gift outfits write\n";
 			std::cout << it.first->Name() << "\n";
+			std::cout << "giftingOutfits" << giftOutfits.size() << "\n";
 		}
 		for(const auto &it : requiredOutfits)
 			out.Write("require", it.first->Name(), it.second);
@@ -556,15 +567,17 @@ MissionAction MissionAction::Instantiate(map<string, string> &subs, const System
 		int day = it.second.first + Random::Int(it.second.second - it.second.first + 1);
 		result.events[it.first] = make_pair(day, day);
 	}
-	/*for(const shared_ptr<Ship> &ship : giftShips)
+	for(const shared_ptr<Ship> &ship : giftShips)
     {
         result.giftShips.push_back(ship);//shared_ptr<Ship>(new Ship()));
-        //ship->SetSystem(result.system);
+        result.giftShips.back()->SetSystem(origin);
+        result.giftShips.back()->get(RequiredCrew);
         result.giftShips.back()->SetGovernment(GameData::PlayerGovernment());
-        //result.giftShips.back()->AddCrew(RequiredCrew());
+        result.giftShips.back()->Disable();
+        result.giftShips.back()->AddCrew(RequiredCrew());
 
-    }*/
-	result.giftShips = giftShips;
+    }
+	//result.giftShips = giftShips;
 	result.giftOutfits = giftOutfits;
 	result.requiredOutfits = requiredOutfits;
 	result.payment = payment + (jumps + 1) * payload * paymentMultiplier;
