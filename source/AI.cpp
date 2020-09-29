@@ -773,10 +773,7 @@ void AI::Step(const PlayerInfo &player, Command &activeCommands)
 				// Mission ships should only pick amongst ships from the same mission.
 				auto missionIt = it->IsSpecial() && !it->IsYours()
 					? find_if(player.Missions().begin(), player.Missions().end(),
-						[&it](const Mission &m) -> bool
-						{
-							return m.HasShip(it);
-						})
+						[&it](const Mission &m) { return m.HasShip(it); })
 					: player.Missions().end();
 				
 				shared_ptr<Ship> newParent;
@@ -2907,7 +2904,8 @@ void AI::AutoFire(const Ship &ship, Command &command, bool secondary) const
 		// Homing weapons revert to "dumb firing" if they have no target.
 		if(weapon->Homing() && currentTarget)
 		{
-			bool hasBoarded = Has(ship, currentTarget, ShipEvent::BOARD);
+			// NPCs shoot ships that they just plundered.
+			bool hasBoarded = !ship.IsYours() && Has(ship, currentTarget, ShipEvent::BOARD);
 			if(currentTarget->IsDisabled() && spareDisabled && !hasBoarded && !disabledOverride)
 				continue;
 			// Don't fire secondary weapons at targets that have started jumping.
@@ -2941,8 +2939,8 @@ void AI::AutoFire(const Ship &ship, Command &command, bool secondary) const
 		// For non-homing weapons:
 		for(const auto &target : enemies)
 		{
-			// Don't shoot ships we want to plunder.
-			bool hasBoarded = Has(ship, target, ShipEvent::BOARD);
+			// NPCs shoot ships that they just plundered.
+			bool hasBoarded = !ship.IsYours() && Has(ship, target, ShipEvent::BOARD);
 			if(target->IsDisabled() && spareDisabled && !hasBoarded && !disabledOverride)
 				continue;
 			
